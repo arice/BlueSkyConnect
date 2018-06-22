@@ -7,11 +7,11 @@ end set_server
 
 on open location this_URL
 	set_server()
-	
-	-- When the link is clicked in thewebpage, this handler will be passed 
+
+	-- When the link is clicked in thewebpage, this handler will be passed
 	-- the URL that triggered the action, similar to:
 	--> bluesky://com.solarwindsmsp.bluesky?key=value&key=value
-	
+
 	-- EXTRACT ARGUMENTS
 	set x to the offset of "?" in this_URL
 	set the argument_string to text from (x + 1) to -1 of this_URL
@@ -19,7 +19,7 @@ on open location this_URL
 	set these_arguments to every text item of the argument_string
 	set AppleScript's text item delimiters to ""
 	set userName to ""
-	
+
 	-- PROCESS ACTIONS
 	-- This loop will execute scripts located within the Resources folder
 	-- of this applet depending on the key and value passed in the URL
@@ -54,7 +54,7 @@ end open location
 
 
 set_server()
--- This handler will load, then execute, a script file 
+-- This handler will load, then execute, a script file
 -- located in the Resources folder of this applet.
 -- This method allows you to change property values
 -- within the loaded script before execution,
@@ -104,25 +104,32 @@ on screen_share(blueSkyID, sshPort, vncPort, serverAddr, userName)
 			activate
 			do script "ssh -t -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" -o \"LocalForward " & vncPort & " localhost:5900\" -o \"StrictHostKeyChecking=no\" -p " & sshPort & " " & userName & "@localhost"
 		end tell
-		--delay 10
-		--seems to be broken in Dos Equis
-		do shell script "sleep 10"
-		set vncCheck2 to do shell script "ps -ax | grep ssh | grep " & vncPort & " | grep -v grep;exit 0"
-		if vncCheck2 is "" then
-			return 0
-		end if
+		do shell script "sleep 1"
+		set i to 9
+		repeat while i > 0
+			do shell script "sleep 1"
+			set vncCheck2 to do shell script "ps -ax | grep ssh | grep " & vncPort & " | grep -v grep;exit 0"
+			if vncCheck2 is not "" then
+				exit repeat
+			end if
+			set i to i - 1
+			if i is 0 then
+				return 0
+			end if
+		end repeat
+		activate
 		display dialog "Click OK after you are logged in to SSH to proceed to VNC login." default button 1 buttons "OK" giving up after 295 with icon path to resource "applet.icns" in bundle (path to me)
 	end if
 	tell application "Screen Sharing"
 		activate
-		GetURL "vnc://" & userName & "@localhost:" & vncPort
+		GetURL "vnc://" & userName & "@127.0.0.1:" & vncPort
 	end tell
 end screen_share
 
 on file_upload(blueSkyID, sshPort, serverAddr, userName)
 	display dialog "Do you want to upload a single file or a folder?" buttons {"File", "Folder", "Cancel"} default button "Folder" with icon path to resource "applet.icns" in bundle (path to me)
 	set myChoice to the result
-	
+
 	if myChoice is {button returned:"Folder"} then
 		set the source_folder to choose folder with prompt "Select the folder to be uploaded:"
 		set posixSrc to the POSIX path of source_folder
