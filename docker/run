@@ -51,5 +51,8 @@ if [[ ! -z ${DEFAULT_USER} ]]; then
 	echo "${DEFAULT_USER}" > /usr/local/bin/BlueSky/Server/defaultLogin.txt
 fi
 
+# start sshd
+/usr/sbin/sshd
+
 # start it up
 exec supervisord -n -c /etc/supervisor/conf.d/supervisord.conf
