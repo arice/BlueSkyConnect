@@ -93,7 +93,7 @@ end if
 on remote_shell(blueSkyID, sshPort, vncPort, serverAddr, userName)
 	tell application "Terminal"
 		activate
-		do script "ssh -t -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" -o \"LocalForward " & vncPort & " localhost:5900\" -o \"StrictHostKeyChecking=no\" -p " & sshPort & " " & userName & "@localhost"
+		do script "ssh -t -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin -o ConnectTimeout=10 admin@" & serverAddr & " /bin/nc %h %p\" -o \"LocalForward " & vncPort & " localhost:5900\" -o \"StrictHostKeyChecking=no\" -p " & sshPort & " " & userName & "@localhost"
 	end tell
 end remote_shell
 
@@ -102,14 +102,14 @@ on screen_share(blueSkyID, sshPort, vncPort, serverAddr, userName)
 	if vncCheck is "" then
 		tell application "Terminal"
 			activate
-			do script "ssh -t -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" -o \"LocalForward " & vncPort & " localhost:5900\" -o \"StrictHostKeyChecking=no\" -p " & sshPort & " " & userName & "@localhost"
+			do script "ssh -t -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin -o ConnectTimeout=10 admin@" & serverAddr & " /bin/nc %h %p\" -o \"LocalForward " & vncPort & " localhost:5900\" -o \"StrictHostKeyChecking=no\" -p " & sshPort & " " & userName & "@localhost"
 		end tell
 		do shell script "sleep 1"
-		set i to 9
+		set i to 15
 		repeat while i > 0
 			do shell script "sleep 1"
-			set vncCheck2 to do shell script "ps -ax | grep ssh | grep " & vncPort & " | grep -v grep;exit 0"
-			if vncCheck2 is not "" then
+			set vncCheck2 to do shell script "nc -z 127.0.0.1 " & vncPort & " && echo 'yes' || echo 'no'"
+			if vncCheck2 is "yes" then
 				exit repeat
 			end if
 			set i to i - 1
@@ -117,8 +117,8 @@ on screen_share(blueSkyID, sshPort, vncPort, serverAddr, userName)
 				return 0
 			end if
 		end repeat
-		activate
-		display dialog "Click OK after you are logged in to SSH to proceed to VNC login." default button 1 buttons "OK" giving up after 295 with icon path to resource "applet.icns" in bundle (path to me)
+		--activate
+		--display dialog "Click OK after you are logged in to SSH to proceed to VNC login." default button 1 buttons "OK" giving up after 295 with icon path to resource "applet.icns" in bundle (path to me)
 	end if
 	tell application "Screen Sharing"
 		activate
@@ -135,14 +135,14 @@ on file_upload(blueSkyID, sshPort, serverAddr, userName)
 		set posixSrc to the POSIX path of source_folder
 		tell application "Terminal"
 			activate
-			do script "scp -r -C -P " & sshPort & " -o \"StrictHostKeyChecking=no\" -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" " & the quoted form of posixSrc & " " & userName & "@localhost:/tmp && exit	"
+			do script "scp -r -C -P " & sshPort & " -o ConnectTimeout=10 -o \"StrictHostKeyChecking=no\" -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" " & the quoted form of posixSrc & " " & userName & "@localhost:/tmp && exit	"
 		end tell
 	else if myChoice is {button returned:"File"} then
 		set the source_file to choose file with prompt "Select the file to be uploaded:"
 		set posixSrc to the POSIX path of source_file
 		tell application "Terminal"
 			activate
-			do script "scp -C -P " & sshPort & " -o \"StrictHostKeyChecking=no\" -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" " & the quoted form of posixSrc & " " & userName & "@localhost:/tmp && exit"
+			do script "scp -C -P " & sshPort & " -o ConnectTimeout=10 -o \"StrictHostKeyChecking=no\" -o \"ProxyCommand ssh -p 3122 -i ~/.ssh/bluesky_admin admin@" & serverAddr & " /bin/nc %h %p\" " & the quoted form of posixSrc & " " & userName & "@localhost:/tmp && exit"
 		end tell
 	else
 		return 0
